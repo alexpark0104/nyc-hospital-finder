@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC Medicaid/Medicare Finder</title>
+    <!-- Tailwind CSS CDN for fast, mobile-friendly styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 p-4">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6 mt-4">
+        <h1 class="text-2xl font-bold text-blue-600 mb-2">NYC Healthcare Finder</h1>
+        <p class="text-sm text-slate-600 mb-4">Find nearby hospitals accepting Medicaid & Medicare by entering your 5-digit NYC zip code.</p>
+        
+        <div class="flex gap-2 mb-6">
+            <input type="text" id="zipInput" placeholder="e.g., 10016" maxlength="5" class="border border-slate-300 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="searchBtn" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700">Search</button>
+        </div>
+
+        <div id="resultsContainer" class="space-y-4">
+            <!-- Results will show up here dynamically -->
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
