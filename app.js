@@ -3,7 +3,7 @@ const searchBtn = document.getElementById('searchBtn');
 const zipInput = document.getElementById('zipInput');
 const resultsContainer = document.getElementById('resultsContainer');
 
-// Approximate center coordinates for common NYC zip codes used as a fallback lookup
+// Approximate center coordinates for common NYC zip codes
 const zipCoords = {
     "10001": { lat: 40.7505, lon: -73.9934 },
     "10016": { lat: 40.7441, lon: -73.9774 },
@@ -16,7 +16,7 @@ const zipCoords = {
     "10301": { lat: 40.6353, lon: -74.0954 }
 };
 
-// Haversine formula to calculate distance in miles between two coordinate sets
+// Haversine formula to calculate distance in miles
 function getDistanceFromLatLonInMiles(lat1, lon1, lat2, lon2) {
     const R = 3959; 
     const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -29,10 +29,10 @@ function getDistanceFromLatLonInMiles(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-// Fetch live hospital data with coordinates from the NYC Open Data API on startup
+// Fetch live hospital data on startup
 window.addEventListener('DOMContentLoaded', async () => {
     try {
-        const apiUrl = 'https://data.cityofnewyork.us/resource/ji82-xba5.json?$where=lower(factype)%20LIKE%20%25hospital%25&$limit=200';
+        const apiUrl = 'https://data.cityofnewyork.us/resource/ji82-xba5.json?$limit=500';
         const response = await fetch(apiUrl);
         const rawData = await response.json();
 
@@ -64,11 +64,10 @@ function performSearch() {
     const queryZip = zipInput.value.trim();
     resultsContainer.innerHTML = '';
 
-    // Check if data is still loading from the API
     if (hospitals.length === 0) {
         resultsContainer.innerHTML = `
             <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
-                <p class="text-amber-800 text-sm font-medium">Still loading city data from the server. Please wait a moment and try again!</p>
+                <p class="text-amber-800 text-sm font-medium">Still loading city data from the server. Please wait a second and try again!</p>
             </div>
         `;
         return;
@@ -82,13 +81,11 @@ function performSearch() {
         `;
         return;
     }
-    
 
-    // Step 1: Look for exact zip code matches first
     let matchedHospitals = hospitals.filter(h => h.zipcode === queryZip);
     let isFallback = false;
 
-    // Step 2: If none found, calculate the nearest hospitals using coordinates
+    // If none found by exact zip, use distance calculation fallback
     if (matchedHospitals.length === 0 && zipCoords[queryZip]) {
         isFallback = true;
         const targetCoord = zipCoords[queryZip];
@@ -98,7 +95,6 @@ function performSearch() {
             distance: getDistanceFromLatLonInMiles(targetCoord.lat, targetCoord.lon, h.lat, h.lon)
         }));
 
-        // Sort from closest to furthest and take top 3
         hospitalsWithDistance.sort((a, b) => a.distance - b.distance);
         matchedHospitals = hospitalsWithDistance.slice(0, 3);
     }
@@ -107,7 +103,6 @@ function performSearch() {
         resultsContainer.innerHTML = `
             <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
                 <p class="text-amber-800 text-sm font-medium">No hospitals found near zip code ${queryZip}.</p>
-                <p class="text-slate-600 text-xs mt-1">Try major hubs like <strong>10016</strong>, <strong>11373</strong>, or <strong>11203</strong>.</p>
             </div>
         `;
         return;
