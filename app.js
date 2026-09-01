@@ -64,6 +64,16 @@ function performSearch() {
     const queryZip = zipInput.value.trim();
     resultsContainer.innerHTML = '';
 
+    // Check if data is still loading from the API
+    if (hospitals.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                <p class="text-amber-800 text-sm font-medium">Still loading city data from the server. Please wait a moment and try again!</p>
+            </div>
+        `;
+        return;
+    }
+
     if (queryZip.length !== 5 || isNaN(queryZip)) {
         resultsContainer.innerHTML = `
             <div class="bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -72,6 +82,7 @@ function performSearch() {
         `;
         return;
     }
+    
 
     // Step 1: Look for exact zip code matches first
     let matchedHospitals = hospitals.filter(h => h.zipcode === queryZip);
