@@ -1,27 +1,441 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NYC Medicaid/Medicare Finder</title>
-    <!-- Tailwind CSS CDN for fast, mobile-friendly styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>Find Care NYC — free & low-cost clinics and hospitals</title>
+<meta name="description" content="Find a free or low-cost clinic or hospital near you in NYC. No insurance or immigration status required.">
+<style>
+  :root{
+    --bg:#FBF8F2;
+    --ink:#1D211F;
+    --ink-soft:#4B534F;
+    --teal:#154C48;
+    --teal-deep:#0E3532;
+    --gold:#E2A33D;
+    --brick:#B7392F;
+    --green:#3E7D52;
+    --line:#E4DDCC;
+    --card:#FFFFFF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.45;
+    font-size:17px;
+    -webkit-text-size-adjust:100%;
+  }
+  h1,h2,h3{
+    font-family:Georgia,"Times New Roman",serif;
+    font-weight:700;
+    margin:0 0 .3em 0;
+    color:var(--teal-deep);
+  }
+  a{color:var(--teal);}
+  .wrap{max-width:640px;margin:0 auto;padding:0 18px 60px;}
+
+  /* top bar */
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 18px;border-bottom:1px solid var(--line);
+    max-width:640px;margin:0 auto;
+  }
+  .brand{font-family:Georgia,serif;font-weight:700;font-size:1.15rem;color:var(--teal-deep);}
+  .lang-toggle{display:flex;gap:6px;}
+  .lang-toggle button{
+    border:1px solid var(--line);background:var(--card);color:var(--ink-soft);
+    padding:6px 10px;border-radius:8px;font-size:.85rem;cursor:pointer;
+  }
+  .lang-toggle button.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+  /* hero / interactive moment */
+  .hero{padding:26px 0 10px;}
+  .hero h1{font-size:1.6rem;line-height:1.25;}
+  .hero p{color:var(--ink-soft);font-size:1.02rem;margin:.4em 0 0;}
+
+  .step{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin-top:18px;
+  }
+  .step h2{font-size:1.05rem;margin-bottom:.5em;}
+
+  .choice-row{display:flex;gap:10px;margin-top:10px;}
+  .choice-btn{
+    flex:1;padding:16px 10px;font-size:1rem;font-weight:600;border-radius:10px;
+    border:2px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;
+  }
+  .choice-btn.emergency{border-color:var(--brick);color:var(--brick);}
+  .choice-btn.emergency.selected{background:var(--brick);color:#fff;}
+  .choice-btn.routine{border-color:var(--green);color:var(--green);}
+  .choice-btn.routine.selected{background:var(--green);color:#fff;}
+
+  .emergency-banner{
+    display:none;background:var(--brick);color:#fff;border-radius:10px;
+    padding:16px;margin-top:14px;font-weight:600;
+  }
+  .emergency-banner a{color:#fff;text-decoration:underline;}
+
+  .zip-row{display:flex;gap:8px;margin-top:10px;}
+  input[type=text]{
+    flex:1;padding:14px;font-size:1.1rem;border-radius:10px;border:2px solid var(--line);
+    -webkit-appearance:none;
+  }
+  input[type=text]:focus{outline:3px solid var(--gold);border-color:var(--teal);}
+  .search-btn{
+    padding:14px 20px;font-size:1.05rem;font-weight:700;border-radius:10px;
+    border:none;background:var(--teal);color:#fff;cursor:pointer;
+  }
+  .search-btn:active{background:var(--teal-deep);}
+
+  /* nyc care box, always visible */
+  .care-box{
+    background:#FFF6E4;border:1px solid var(--gold);border-radius:var(--radius);
+    padding:16px 18px;margin-top:18px;
+  }
+  .care-box h2{font-size:1rem;color:var(--teal-deep);}
+  .care-box p{margin:.3em 0 .6em;font-size:.95rem;color:var(--ink-soft);}
+  .call-btn{
+    display:inline-block;background:var(--gold);color:#20180a;font-weight:700;
+    padding:10px 16px;border-radius:8px;text-decoration:none;font-size:1rem;
+  }
+
+  /* results */
+  .results{margin-top:22px;}
+  .results h2{font-size:1.1rem;}
+  .note{color:var(--ink-soft);font-size:.9rem;margin-top:-4px;margin-bottom:14px;}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-bottom:12px;
+  }
+  .card .type-tag{
+    display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.02em;
+    padding:3px 8px;border-radius:100px;margin-bottom:6px;
+  }
+  .type-tag.clinic{background:#E7F2E9;color:var(--green);}
+  .type-tag.hospital{background:#F5E6E4;color:var(--brick);}
+  .card h3{font-size:1.05rem;margin:0 0 4px;}
+  .card .addr{color:var(--ink-soft);font-size:.92rem;margin-bottom:6px;}
+  .card .hours{color:var(--ink-soft);font-size:.85rem;margin-bottom:10px;}
+  .card-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .card-actions a{
+    font-size:.88rem;font-weight:600;text-decoration:none;
+    border:1px solid var(--line);padding:8px 12px;border-radius:8px;color:var(--teal-deep);
+  }
+  .card-actions a.call{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+  .free-line{
+    font-size:.85rem;color:var(--green);font-weight:600;margin-top:6px;
+  }
+
+  footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink-soft);font-size:.82rem;}
+  footer a{color:var(--ink-soft);}
+  .disclaimer{margin-top:8px;}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 p-4">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6 mt-4">
-        <h1 class="text-2xl font-bold text-blue-600 mb-2">NYC Healthcare Finder</h1>
-        <p class="text-sm text-slate-600 mb-4">Find nearby hospitals accepting Medicaid & Medicare by entering your 5-digit NYC zip code.</p>
-        
-        <div class="flex gap-2 mb-6">
-            <input type="text" id="zipInput" placeholder="e.g., 10016" maxlength="5" class="border border-slate-300 rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button id="searchBtn" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700">Search</button>
-        </div>
+<body>
 
-        <div id="resultsContainer" class="space-y-4">
-            <!-- Results will show up here dynamically -->
-        </div>
+<div class="topbar">
+  <div class="brand" data-i18n="brand">Find Care NYC</div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button data-lang="en" class="active">EN</button>
+    <button data-lang="es">ES</button>
+    <button data-lang="zh">中文</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1 data-i18n="h1">Worried about a doctor bill? Not sure where to go?</h1>
+    <p data-i18n="sub">Find a free or low-cost clinic or hospital near you in NYC. No insurance needed. No one asks about immigration status.</p>
+  </div>
+
+  <div class="step">
+    <h2 data-i18n="q_emergency">Is this a life-threatening emergency? (trouble breathing, severe bleeding, chest pain)</h2>
+    <div class="choice-row">
+      <button class="choice-btn emergency" id="btn-emergency" data-i18n="yes">Yes</button>
+      <button class="choice-btn routine" id="btn-routine" data-i18n="no">No, routine care</button>
     </div>
+    <div class="emergency-banner" id="emergency-banner">
+      <span data-i18n="call911">Call 911 now, or go straight to the nearest hospital emergency room.</span>
+      <div style="margin-top:8px;"><a href="tel:911" data-i18n="call911btn">Call 911</a></div>
+    </div>
+  </div>
 
-    <script src="app.js"></script>
+  <div class="step">
+    <h2 data-i18n="q_zip">What's your ZIP code?</h2>
+    <div class="zip-row">
+      <input type="text" id="zip-input" inputmode="numeric" maxlength="5" placeholder="10001" data-i18n-ph="zip_ph">
+      <button class="search-btn" id="search-btn" data-i18n="search">Search</button>
+    </div>
+  </div>
+
+  <div class="care-box">
+    <h2 data-i18n="care_title">No insurance? You can still get care.</h2>
+    <p data-i18n="care_body">NYC Care gives low-cost and no-cost care at these clinics and hospitals — no matter your immigration status or ability to pay. Your information is never shared for immigration purposes.</p>
+    <a class="call-btn" href="tel:6466922273" data-i18n="care_call">Call 646-NYC-CARE</a>
+  </div>
+
+  <div class="results" id="results" style="display:none;">
+    <h2 data-i18n="results_title">Places near you</h2>
+    <div class="note" id="results-note"></div>
+    <div id="results-list"></div>
+  </div>
+
+  <footer>
+    <div data-i18n="foot1">Data: NYC Health + Hospitals public facility list (11 hospitals, 29 community health centers, all boroughs). This is a subset of care options in NYC — private hospitals and urgent care centers may also serve you.</div>
+    <div class="disclaimer" data-i18n="foot2">This tool does not give medical advice. If you believe you are having a medical emergency, call 911.</div>
+  </footer>
+
+</div>
+
+<script>
+// ---------- data: NYC Health + Hospitals public facilities ----------
+// type: "hospital" (has ER, for urgent/emergency needs) or "clinic" (Gotham Health community clinics, best first stop for routine care)
+const FACILITIES = [
+  {n:"NYC Health + Hospitals/Bellevue", t:"hospital", b:"Manhattan", a:"462 First Avenue, New York, NY 10016", p:"12125621000", h:""},
+  {n:"NYC Health + Hospitals/Harlem", t:"hospital", b:"Manhattan", a:"506 Lenox Avenue, New York, NY 10037", p:"12129391000", h:""},
+  {n:"NYC Health + Hospitals/Metropolitan", t:"hospital", b:"Manhattan", a:"1901 First Avenue, New York, NY 10029", p:"12124236262", h:""},
+  {n:"NYC Health + Hospitals/Elmhurst", t:"hospital", b:"Queens", a:"79-01 Broadway, Elmhurst, NY 11373", p:"17183344000", h:""},
+  {n:"NYC Health + Hospitals/Queens", t:"hospital", b:"Queens", a:"82-68 164th Street, Queens, NY 11432", p:"17188833000", h:""},
+  {n:"NYC Health + Hospitals/Jacobi", t:"hospital", b:"Bronx", a:"1400 Pelham Parkway South, Bronx, NY 10461", p:"17189185000", h:""},
+  {n:"NYC Health + Hospitals/Lincoln", t:"hospital", b:"Bronx", a:"234 East 149th Street, Bronx, NY 10451", p:"17185795000", h:""},
+  {n:"NYC Health + Hospitals/North Central Bronx", t:"hospital", b:"Bronx", a:"3424 Kossuth Avenue, Bronx, NY 10467", p:"17185195000", h:""},
+  {n:"NYC Health + Hospitals/Kings County", t:"hospital", b:"Brooklyn", a:"451 Clarkson Avenue, Brooklyn, NY 11203", p:"17182453131", h:""},
+  {n:"NYC Health + Hospitals/Woodhull", t:"hospital", b:"Brooklyn", a:"760 Broadway, Brooklyn, NY 11206", p:"17189638000", h:""},
+  {n:"NYC Health + Hospitals/South Brooklyn Health", t:"hospital", b:"Brooklyn", a:"2601 Ocean Parkway, Brooklyn, NY 11235", p:"18446924692", h:""},
+
+  {n:"Gotham Health, Dyckman", t:"clinic", b:"Manhattan", a:"175 Nagle Avenue, New York, NY 10034", p:"18446924692", h:"Mon,Wed-Fri 8:30am-5pm; Tue 11am-7pm"},
+  {n:"Gotham Health, Gouverneur", t:"clinic", b:"Manhattan", a:"227 Madison Street, New York, NY 10002", p:"18446924692", h:"Mon,Tue,Thu 8am-7pm; Wed,Fri 8am-5pm; Sat 8am-4:30pm"},
+  {n:"Gotham Health, Judson", t:"clinic", b:"Manhattan", a:"34 Spring Street, New York, NY 10012", p:"18446924692", h:"Mon-Fri 8am-5pm"},
+  {n:"Gotham Health, Roberto Clemente Center", t:"clinic", b:"Manhattan", a:"540 East 13th Street, New York, NY 10009", p:"18446924692", h:"Mon-Thu 8:30am-8pm; Fri 8:30am-3pm"},
+  {n:"Gotham Health, St. Nicholas", t:"clinic", b:"Manhattan", a:"281 West 127th Street, New York, NY 10027", p:"18446924692", h:"Mon-Fri 8:30am-5pm"},
+  {n:"Gotham Health, Sydenham", t:"clinic", b:"Manhattan", a:"264 West 118th Street, New York, NY 10026", p:"18446924692", h:"Mon,Fri 8am-5pm; Tue-Thu 8am-7pm; Sat 8am-4pm"},
+
+  {n:"Gotham Health, Bedford", t:"clinic", b:"Brooklyn", a:"485 Throop Avenue, Brooklyn, NY 11221", p:"18446924692", h:"Mon-Fri 8:30am-4:30pm"},
+  {n:"Gotham Health, Belvis", t:"clinic", b:"Bronx", a:"545 East 142nd Street, Bronx, NY 10454", p:"18446924692", h:"Mon,Wed,Thu 8:30am-7pm; Tue,Fri 8:30am-5pm; Sat 8:30am-4:30pm"},
+  {n:"Gotham Health, Broadway", t:"clinic", b:"Brooklyn", a:"815 Broadway, Brooklyn, NY 11206", p:"18446924692", h:"Mon,Thu 8am-7pm; Tue,Wed,Fri 8am-5pm; Sat 8:30am-4:30pm"},
+  {n:"Gotham Health, Brownsville", t:"clinic", b:"Brooklyn", a:"259 Bristol Street, Brooklyn, NY 11212", p:"18446924692", h:"Mon-Fri 8:30am-4:30pm"},
+  {n:"Gotham Health, Bushwick", t:"clinic", b:"Brooklyn", a:"335 Central Avenue, Brooklyn, NY 11221", p:"18446924692", h:"Mon 11am-7pm; Tue-Fri 8:30am-4:30pm"},
+  {n:"Gotham Health, Crown Heights", t:"clinic", b:"Brooklyn", a:"1218 Prospect Place, Brooklyn, NY 11213", p:"18446924692", h:"Mon-Fri 8:30am-4:30pm"},
+  {n:"Gotham Health, Cumberland", t:"clinic", b:"Brooklyn", a:"100 North Portland Avenue, Brooklyn, NY 11205", p:"18446924692", h:"Mon,Wed,Thu 8:30am-7pm; Tue,Fri 8:30am-5pm; Sat 8:30am-4:30pm"},
+  {n:"Gotham Health, East New York", t:"clinic", b:"Brooklyn", a:"2094 Pitkin Avenue, Brooklyn, NY 11207", p:"18446924692", h:"Mon-Thu 8am-7pm; Fri,Sat 8:30am-4:30pm"},
+  {n:"Gotham Health, Greenpoint", t:"clinic", b:"Brooklyn", a:"875 Manhattan Avenue, Brooklyn, NY 11222", p:"18446924692", h:"Mon 11am-7pm; Tue-Fri 8:30am-5pm"},
+  {n:"Gotham Health, Jonathan Williams", t:"clinic", b:"Brooklyn", a:"333 Roebling Street, Brooklyn, NY 11211", p:"18446924692", h:"Mon-Fri 8:30am-4:30pm"},
+  {n:"Gotham Health, Williamsburg", t:"clinic", b:"Brooklyn", a:"279 Graham Avenue, Brooklyn, NY 11211", p:"18446924692", h:"Mon-Fri 8:30am-4:30pm"},
+
+  {n:"Gotham Health, Gun Hill", t:"clinic", b:"Bronx", a:"1012 East Gun Hill Road, Bronx, NY 10469", p:"18446924692", h:"Mon-Fri 8:30am-5pm"},
+  {n:"Gotham Health, Morrisania", t:"clinic", b:"Bronx", a:"1225 Gerard Avenue, Bronx, NY 10452", p:"18446924692", h:"Mon,Wed,Thu 8:30am-7pm; Tue,Fri 8:30am-5pm; Sat 8:30am-4:30pm"},
+  {n:"Gotham Health, Tremont", t:"clinic", b:"Bronx", a:"1920 Webster Ave, Bronx, NY 10457", p:"18446924692", h:"Mon,Wed,Thu 8:30am-7pm; Tue,Fri 8:30am-5pm; Sat 8:30am-4:30pm"},
+
+  {n:"Gotham Health, Jackson Heights", t:"clinic", b:"Queens", a:"34-33 Junction Boulevard, Queens, NY 11372", p:"18446924692", h:"Mon,Tue,Wed,Fri 8:30am-4:30pm; Thu 10:30am-6:30pm"},
+  {n:"Gotham Health, Lefrak", t:"clinic", b:"Queens", a:"59-17 Junction Boulevard, Queens, NY 11368", p:"18446924692", h:"Mon,Tue,Wed,Fri 8:30am-4:30pm; Thu 10:30am-6:30pm"},
+  {n:"Gotham Health, Parsons", t:"clinic", b:"Queens", a:"90-37 Parsons Boulevard, Queens, NY 11432", p:"18446924692", h:"Mon,Wed,Fri 8:30am-5pm; Tue,Thu 8:30am-7pm"},
+  {n:"Gotham Health, Ridgewood", t:"clinic", b:"Queens", a:"769 Onderdonk Avenue, Queens, NY 11385", p:"18446924692", h:"Mon,Tue,Wed,Fri 8:30am-4:30pm; Thu 10:30am-6:30pm"},
+  {n:"Gotham Health, Roosevelt", t:"clinic", b:"Queens", a:"37-50 72nd Street, Jackson Heights, Queens, NY 11372", p:"18446924692", h:"Mon,Thu 8:30am-7pm; Tue,Wed,Fri 8:30am-5pm; Sat 8:30am-4:30pm"},
+  {n:"Gotham Health, South Queens", t:"clinic", b:"Queens", a:"114-02 Guy R. Brewer Boulevard, Queens, NY 11434", p:"18446924692", h:"Mon-Fri 8am-5pm"},
+  {n:"Gotham Health, Springfield Gardens", t:"clinic", b:"Queens", a:"134-64 Springfield Boulevard, Queens, NY 11413", p:"18446924692", h:"Mon,Tue,Thu,Fri 8:30am-4:30pm; Wed 11am-7pm"},
+  {n:"Gotham Health, Woodside", t:"clinic", b:"Queens", a:"50-53 Newtown Road, Queens, NY 11377", p:"18446924692", h:"Wed 8:30am-12pm; Thu 10:30am-6:30pm; Fri 8:30am-4:30pm"},
+
+  {n:"Gotham Health, Vanderbilt", t:"clinic", b:"Staten Island", a:"165 Vanderbilt Avenue, Staten Island, NY 10304", p:"18446924692", h:"Mon,Wed,Thu,Fri 8am-5pm; Tue 8am-7pm; Sat 8:30am-4:30pm"},
+];
+
+function boroughForZip(zip){
+  const p3 = zip.slice(0,3);
+  if(["100","101","102"].includes(p3)) return "Manhattan";
+  if(p3 === "104") return "Bronx";
+  if(p3 === "112") return "Brooklyn";
+  if(p3 === "103") return "Staten Island";
+  if(["110","111","113","114","116"].includes(p3)) return "Queens";
+  return null;
+}
+
+// ---------- i18n ----------
+const STRINGS = {
+  en:{
+    brand:"Find Care NYC",
+    h1:"Worried about a doctor bill? Not sure where to go?",
+    sub:"Find a free or low-cost clinic or hospital near you in NYC. No insurance needed. No one asks about immigration status.",
+    q_emergency:"Is this a life-threatening emergency? (trouble breathing, severe bleeding, chest pain)",
+    yes:"Yes",
+    no:"No, routine care",
+    call911:"Call 911 now, or go straight to the nearest hospital emergency room.",
+    call911btn:"Call 911",
+    q_zip:"What's your ZIP code?",
+    zip_ph:"10001",
+    search:"Search",
+    care_title:"No insurance? You can still get care.",
+    care_body:"NYC Care gives low-cost and no-cost care at these clinics and hospitals — no matter your immigration status or ability to pay. Your information is never shared for immigration purposes.",
+    care_call:"Call 646-NYC-CARE",
+    results_title:"Places near you",
+    results_note_clinic:(bo)=>`Showing community clinics in ${bo} first — usually faster and cheaper than an ER for things like colds, fevers, and check-ups. Hospitals are listed below in case you need one.`,
+    results_note_hosp:(bo)=>`Showing hospitals with emergency rooms in ${bo} first.`,
+    no_zip_match:"That doesn't look like a NYC ZIP code. Try a 5-digit ZIP like 11373 or 10453.",
+    clinic:"Clinic",
+    hospital:"Hospital",
+    call:"Call",
+    directions:"Directions",
+    free_note:"Free or low-cost through NYC Care — no insurance or immigration status required",
+    foot1:"Data: NYC Health + Hospitals public facility list (11 hospitals, 29 community health centers, all boroughs). This is a subset of care options in NYC — private hospitals and urgent care centers may also serve you.",
+    foot2:"This tool does not give medical advice. If you believe you are having a medical emergency, call 911."
+  },
+  es:{
+    brand:"Find Care NYC",
+    h1:"¿Le preocupa la factura del médico? ¿No sabe adónde ir?",
+    sub:"Encuentre una clínica u hospital gratuito o de bajo costo cerca de usted en NYC. No necesita seguro. Nadie pregunta sobre su estatus migratorio.",
+    q_emergency:"¿Es esto una emergencia que pone en peligro la vida? (dificultad para respirar, sangrado severo, dolor en el pecho)",
+    yes:"Sí",
+    no:"No, atención de rutina",
+    call911:"Llame al 911 ahora, o vaya directamente a la sala de emergencias del hospital más cercano.",
+    call911btn:"Llamar al 911",
+    q_zip:"¿Cuál es su código postal (ZIP)?",
+    zip_ph:"10001",
+    search:"Buscar",
+    care_title:"¿No tiene seguro? Aún puede recibir atención.",
+    care_body:"NYC Care ofrece atención gratuita o de bajo costo en estas clínicas y hospitales, sin importar su estatus migratorio o su capacidad de pago. Su información nunca se comparte con fines migratorios.",
+    care_call:"Llame al 646-NYC-CARE",
+    results_title:"Lugares cerca de usted",
+    results_note_clinic:(bo)=>`Mostrando primero las clínicas comunitarias en ${bo} — generalmente más rápidas y económicas que la sala de emergencias para resfriados, fiebres y chequeos. Los hospitales aparecen abajo por si los necesita.`,
+    results_note_hosp:(bo)=>`Mostrando primero los hospitales con sala de emergencias en ${bo}.`,
+    no_zip_match:"Eso no parece un código postal de NYC. Intente un código de 5 dígitos como 11373 o 10453.",
+    clinic:"Clínica",
+    hospital:"Hospital",
+    call:"Llamar",
+    directions:"Cómo llegar",
+    free_note:"Gratis o de bajo costo a través de NYC Care — no se requiere seguro ni estatus migratorio",
+    foot1:"Datos: lista pública de instalaciones de NYC Health + Hospitals (11 hospitales, 29 centros de salud comunitarios, en los cinco condados). Este es un subconjunto de opciones de atención en NYC — hospitales privados y centros de urgencias también pueden atenderle.",
+    foot2:"Esta herramienta no ofrece consejos médicos. Si cree que tiene una emergencia médica, llame al 911."
+  },
+  zh:{
+    brand:"Find Care NYC",
+    h1:"担心医疗账单？不知道该去哪里？",
+    sub:"在纽约市为您查找附近的免费或低价诊所或医院。无需保险,不会询问您的移民身份。",
+    q_emergency:"这是危及生命的紧急情况吗?(呼吸困难、大出血、胸痛)",
+    yes:"是",
+    no:"不是,常规护理",
+    call911:"请立即拨打911,或直接前往最近的医院急诊室。",
+    call911btn:"拨打911",
+    q_zip:"您的邮政编码是?",
+    zip_ph:"10001",
+    search:"搜索",
+    care_title:"没有保险？您仍然可以获得医疗服务。",
+    care_body:"NYC Care 在这些诊所和医院提供低价或免费医疗服务 — 无论您的移民身份或支付能力如何。您的信息绝不会用于移民目的。",
+    care_call:"拨打 646-NYC-CARE",
+    results_title:"您附近的地点",
+    results_note_clinic:(bo)=>`优先显示${bo}的社区诊所 — 对于感冒、发烧和体检等情况,通常比急诊室更快、更便宜。医院列在下面,以备您需要。`,
+    results_note_hosp:(bo)=>`优先显示${bo}设有急诊室的医院。`,
+    no_zip_match:"这似乎不是纽约市的邮政编码。请尝试5位数的邮编,例如 11373 或 10453。",
+    clinic:"诊所",
+    hospital:"医院",
+    call:"致电",
+    directions:"路线",
+    free_note:"通过 NYC Care 免费或低价服务 — 无需保险或移民身份",
+    foot1:"数据来源：NYC Health + Hospitals 公开设施列表(11家医院、29个社区健康中心,覆盖所有五个区)。这只是纽约市部分医疗选择 — 私立医院和紧急护理中心也可能为您提供服务。",
+    foot2:"本工具不提供医疗建议。如果您认为自己遇到医疗紧急情况,请拨打911。"
+  }
+};
+
+let lang = "en";
+let triage = null; // "emergency" | "routine"
+
+function t(key){ return STRINGS[lang][key]; }
+
+function applyStaticStrings(){
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key = el.getAttribute("data-i18n");
+    el.textContent = t(key);
+  });
+  const zipInput = document.getElementById("zip-input");
+  zipInput.placeholder = t("zip_ph");
+}
+
+document.querySelectorAll(".lang-toggle button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    lang = btn.getAttribute("data-lang");
+    document.querySelectorAll(".lang-toggle button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    applyStaticStrings();
+    renderResultsIfReady();
+  });
+});
+
+const emergencyBtn = document.getElementById("btn-emergency");
+const routineBtn = document.getElementById("btn-routine");
+const emergencyBanner = document.getElementById("emergency-banner");
+
+emergencyBtn.addEventListener("click", ()=>{
+  triage = "emergency";
+  emergencyBtn.classList.add("selected");
+  routineBtn.classList.remove("selected");
+  emergencyBanner.style.display = "block";
+  renderResultsIfReady();
+});
+routineBtn.addEventListener("click", ()=>{
+  triage = "routine";
+  routineBtn.classList.add("selected");
+  emergencyBtn.classList.remove("selected");
+  emergencyBanner.style.display = "none";
+  renderResultsIfReady();
+});
+
+document.getElementById("search-btn").addEventListener("click", renderResultsIfReady);
+document.getElementById("zip-input").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") renderResultsIfReady();
+});
+
+function renderResultsIfReady(){
+  const zip = document.getElementById("zip-input").value.trim();
+  const resultsBox = document.getElementById("results");
+  const listEl = document.getElementById("results-list");
+  const noteEl = document.getElementById("results-note");
+
+  if(zip.length !== 5 || isNaN(zip)){
+    return; // wait for a full zip before showing anything
+  }
+  const borough = boroughForZip(zip);
+  resultsBox.style.display = "block";
+  listEl.innerHTML = "";
+
+  if(!borough){
+    noteEl.textContent = t("no_zip_match");
+    return;
+  }
+
+  let matches = FACILITIES.filter(f => f.b === borough);
+  const emergencyMode = triage === "emergency";
+  matches.sort((a,b)=>{
+    const aFirst = emergencyMode ? a.t === "hospital" : a.t === "clinic";
+    const bFirst = emergencyMode ? b.t === "hospital" : b.t === "clinic";
+    return (aFirst === bFirst) ? 0 : (aFirst ? -1 : 1);
+  });
+
+  noteEl.textContent = emergencyMode ? t("results_note_hosp")(borough) : t("results_note_clinic")(borough);
+
+  matches.forEach(f=>{
+    const card = document.createElement("div");
+    card.className = "card";
+    const mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(f.a);
+    card.innerHTML = `
+      <span class="type-tag ${f.t}">${f.t === "hospital" ? t("hospital") : t("clinic")}</span>
+      <h3>${f.n}</h3>
+      <div class="addr">${f.a}</div>
+      ${f.h ? `<div class="hours">${f.h}</div>` : ""}
+      <div class="card-actions">
+        <a class="call" href="tel:${f.p}">${t("call")}</a>
+        <a href="${mapsUrl}" target="_blank" rel="noopener">${t("directions")}</a>
+      </div>
+      <div class="free-line">${t("free_note")}</div>
+    `;
+    listEl.appendChild(card);
+  });
+}
+
+applyStaticStrings();
+</script>
+
 </body>
 </html>
